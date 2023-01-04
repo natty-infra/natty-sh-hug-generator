@@ -15,7 +15,7 @@
         <label for="recipient">Recipient</label>
         <input id="recipient">
         <br>
-        <label for="expiration">Expiration</label>
+        <label for="expiration">Valid until</label>
         <input id="expiration" placeholder="Leave empty for a random one">
         <br>
         <label for="code">Code</label>
@@ -37,6 +37,13 @@
     <img id="image" alt="The hug coupon" src="">
     <script>
 
+        function handleResponse(response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response;
+        }
+
         function loadMastodon() {
             let tag = prompt("Enter your Mastodon/*oma tag (e.g. @natty@tech.lgbt)");
             if (tag.startsWith("@")) {
@@ -46,9 +53,14 @@
             let [username, instance] = tag.split("@", 2);
 
             fetch(`https://${instance}/api/v1/accounts/lookup?acct=${username}`)
+                .then(handleResponse)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById("avatar").src = data.avatar;
+                })
+                .catch(error => {
+                    alert("Avatar request failed.");
+                    console.log(error);
                 });
         }
 
@@ -70,6 +82,7 @@
                 })
             })
                 .then(response => response.json())
+                .then(handleResponse)
                 .then(data => {
                     if (data.length > 0) {
                         document.getElementById("avatar").src = data[0].avatarUrl;
@@ -77,6 +90,10 @@
                     }
 
                     document.getElementById("avatar").src = data.avatarUrl;
+                })
+                .catch(error => {
+                    alert("Avatar request failed.");
+                    console.log(error);
                 });
         }
     </script>

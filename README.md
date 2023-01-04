@@ -2,6 +2,8 @@
 
 A WASM hug generator written in Rust and wasm-pack.
 
+![An example hug coupon](./demo.webp)
+
 ## Building
 
 ```sh

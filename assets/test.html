@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natty.sh Hug Generator</title>
+</head>
+<body>
+    <h1>Natty.sh Hug Generator</h1>
+    <p>Click the button to generate a hug!</p>
+    <form onsubmit="return false;">
+        <label for="hue">Color</label>
+        <input id="hue" type="range" min="-180" max="180" value="0">
+        <br>
+        <label for="recipient">Recipient</label>
+        <input id="recipient">
+        <br>
+        <label for="expiration">Expiration</label>
+        <input id="expiration" placeholder="Leave empty for a random one">
+        <br>
+        <label for="code">Code</label>
+        <input id="code" placeholder="Leave empty for a random one">
+        <br>
+        <img id="avatar" crossorigin="anonymous" style="width: 64px; height: 64px" src="" alt="Your avatar">
+        <button type="button" onclick="loadMastodon()">Load avatar from Mastodon/*oma</button>
+        <button type="button" onclick="loadMisskey()">Load avatar from *key</button>
+        <button type="button" onclick="uploadAvatar()">Upload avatar</button>
+        <br>
+        <input id="attribution" type="checkbox" checked="checked">
+        <label for="attribution">Attribution (appreciated but not required)</label>
+        <br>
+        <button id="hug" type="submit">Hug me!</button>
+        <button id="downloadHug">Download</button>
+    </form>
+    <br>
+    <canvas id="canvas" style="display: none" width="800" height="400"></canvas>
+    <img id="image" alt="The hug coupon" src="">
+    <script>
+
+        function loadMastodon() {
+            let tag = prompt("Enter your Mastodon/*oma tag (e.g. @natty@tech.lgbt)");
+            if (tag.startsWith("@")) {
+                tag = tag.substring(1);
+            }
+
+            let [username, instance] = tag.split("@", 2);
+
+            fetch(`https://${instance}/api/v1/accounts/lookup?acct=${username}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("avatar").src = data.avatar;
+                });
+        }
+
+        function loadMisskey() {
+            let tag = prompt("Enter your *key tag (e.g. @natty@tech.lgbt)");
+            if (tag.startsWith("@")) {
+                tag = tag.substring(1);
+            }
+
+            let [username, instance] = tag.split("@", 2);
+
+            fetch(`https://${instance}/api/users/search-by-username-and-host`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    username
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        document.getElementById("avatar").src = data[0].avatarUrl;
+                        return;
+                    }
+
+                    document.getElementById("avatar").src = data.avatarUrl;
+                });
+        }
+    </script>
+    <script type="module">
+        import init, {generate_hug} from "./natty_sh_hug_generator.js";
+        init().then(() => {
+            document.getElementById("hug").addEventListener("click", async () => {
+                const canvas = document.getElementById("canvas");
+                const attribution = document.getElementById("attribution").checked;
+                const expiration = document.getElementById("expiration").value;
+                const code = document.getElementById("code").value;
+                const recipient = document.getElementById("recipient").value;
+
+                /**
+                 * @type {HTMLImageElement}
+                 */
+                const avatar = document.getElementById("avatar");
+                const avatarBitmap = await createImageBitmap(avatar);
+
+                await generate_hug(parseFloat(document.getElementById("hue").value), avatarBitmap, recipient, expiration, code, attribution);
+
+                document.getElementById("image").src = canvas.toDataURL("image/png");
+
+                return false;
+            });
+
+            document.getElementById("downloadHug").addEventListener("click", () => {
+                const link = document.createElement("a");
+                link.download = "hug.png";
+                link.href = document.getElementById("image").src;
+                link.click();
+            });
+        });
+
+
+    </script>
+
+</body>
+</html>
